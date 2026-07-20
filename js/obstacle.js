@@ -43,6 +43,19 @@
       };
     }
 
+    renderShadow(ctx, groundY) {
+      const sw = this.width * 0.8;
+      const sh = 8;
+      const sx = this.x + (this.width - sw) / 2;
+      const sy = groundY + 4;
+      ctx.save();
+      ctx.globalAlpha = 0.18;
+      ctx.fillStyle = "#1F2937";
+      ctx.beginPath();
+      ctx.ellipse(sx + sw / 2, sy, sw / 2, sh / 2, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
     render(ctx) {
       const Draw = window.CoinDash.Draw;
       if (this.type === "low_crate") {
