@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Coin Dash — mini game endless runner 2D: chạy xa, gom coin, phá kỷ lục.">
+  <title>Coin Dash — Chạy xa. Gom coin. Phá kỷ lục.</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10' fill='%23FFC93C' stroke='%23B57E14' stroke-width='2'/><path d='M15.4 9.2a4 4 0 1 0 0 5.6' fill='none' stroke='%238F5F0A' stroke-width='2.4' stroke-linecap='round'/></svg>">
+  <link rel="stylesheet" href="./css/reset.css">
+  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="./css/responsive.css">
+  <!-- Thứ tự script theo dependency: namespace -> config -> hạ tầng -> thực thể -> điều phối -> UI -> game -> main -->
+  <script defer src="./js/namespace.js"></script>
+  <script defer src="./js/config.js"></script>
+  <script defer src="./js/storage.js"></script>
+  <script defer src="./js/audio.js"></script>
+  <script defer src="./js/input.js"></script>
+  <script defer src="./js/collision.js"></script>
+  <script defer src="./js/viewport.js"></script>
+  <script defer src="./js/particles.js"></script>
+  <script defer src="./js/player.js"></script>
+  <script defer src="./js/obstacle.js"></script>
+  <script defer src="./js/coin.js"></script>
+  <script defer src="./js/spawn-director.js"></script>
+  <script defer src="./js/missions.js"></script>
+  <script defer src="./js/ui.js"></script>
+  <script defer src="./js/game.js"></script>
+  <script defer src="./js/main.js"></script>
+</head>
+<body>
+  <main class="game-shell">
+    <div class="game-stage" id="gameStage">
+      <canvas id="gameCanvas" class="game-canvas" width="1280" height="720">
+        Trình duyệt của bạn không hỗ trợ Canvas. Coin Dash cần Canvas 2D để chạy — hãy dùng Chrome, Safari, Edge hoặc Firefox bản mới.
+      </canvas>
+
+      <!-- HUD (z 20): CSS pixel, không scale theo canvas, hỗ trợ safe area -->
+      <div id="hud" class="hud" hidden>
+        <div class="hud-group">
+          <div class="hud-chip">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.47 5.32 5.83.62-4.35 3.93 1.2 5.74L12 16.2l-5.15 2.91 1.2-5.74L3.7 9.44l5.83-.62L12 3.5z" fill="#FFC93C" stroke="#B57E14" stroke-width="1.5" stroke-linejoin="round"/></svg>
+            <span class="hud-label">Điểm</span>
+            <span class="hud-value" id="hudScore">0</span>
+          </div>
+          <div class="hud-chip">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="#FFC93C" stroke="#B57E14" stroke-width="2"/><circle cx="12" cy="12" r="5.4" fill="none" stroke="#D99A1F" stroke-width="1.8"/></svg>
+            <span class="hud-label">Coin</span>
+            <span class="hud-value" id="hudCoins">0</span>
+          </div>
+        </div>
+        <div class="hud-group">
+          <div class="hud-chip" id="hudHearts" role="img" aria-label="Máu: 3/3"></div>
+          <button type="button" class="btn btn-icon" id="btnPause" data-action="pause" aria-label="Tạm dừng">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5" width="4" height="14" rx="1.4" fill="currentColor"/><rect x="13.5" y="5" width="4" height="14" rx="1.4" fill="currentColor"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Tutorial callout (z 30): không che gameplay -->
+      <div id="tutorialCallout" class="tutorial-callout" hidden>
+        <span id="tutorialText" class="tutorial-text">Chạm hoặc nhấn Space để nhảy</span>
+        <button type="button" class="btn btn-small btn-ghost" data-action="skipTutorial">Bỏ qua</button>
+      </div>
+
+      <!-- LOADING -->
+      <section id="screen-LOADING" class="screen screen-loading">
+        <div class="loading-inner">
+          <p class="loading-logo">Coin Dash</p>
+          <div class="loading-bar" id="loadingBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Tiến trình tải">
+            <div class="loading-fill" id="loadingFill"></div>
+          </div>
+          <p class="loading-text" id="loadingText">Đang tải… 0%</p>
+        </div>
+      </section>
+
+      <!-- HOME: full-stage scene, không dùng white modal nhỏ -->
+      <section id="screen-HOME" class="screen screen-home" hidden>
+        <header class="home-header">
+          <div class="home-logo">
+            <svg class="home-logo-coin" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#FFC93C" stroke="#B57E14" stroke-width="2"/><path d="M15.4 9.2a4 4 0 1 0 0 5.6" fill="none" stroke="#8F5F0A" stroke-width="2.4" stroke-linecap="round"/></svg>
+            <h1 class="home-title" tabindex="-1">Coin Dash</h1>
+          </div>
+          <div class="home-stats">
+            <div class="stat-chip">
+              <span class="stat-label">Điểm cao</span>
+              <span class="stat-value" id="homeHighScore">0</span>
+            </div>
+            <div class="stat-chip">
+              <span class="stat-label">Tổng coin</span>
+              <span class="stat-value" id="homeTotalCoins">0</span>
+            </div>
+          </div>
+        </header>
+        <p class="home-tagline">Chạy xa. Gom coin. Phá kỷ lục.</p>
+        <!-- Hero canvas: hiển thị trên mobile; desktop dùng attract scene vẽ thẳng trên game canvas -->
+        <div class="home-hero">
+          <canvas id="homeHeroCanvas" width="220" height="220" aria-hidden="true"></canvas>
+          <p class="home-character-name" id="homeCharacterName">Blue Runner</p>
+        </div>
+        <div class="home-sheet">
+          <div id="homeFeaturedMission" class="mission-card mission-card-featured"></div>
+          <button type="button" class="btn btn-cta" data-action="play" data-autofocus>Chơi ngay</button>
+          <div class="home-secondary">
+            <button type="button" class="btn btn-secondary" data-action="characterSelect">Nhân vật</button>
+            <button type="button" class="btn btn-secondary" data-action="missions">Nhiệm vụ</button>
+            <button type="button" class="btn btn-secondary" data-action="settings">Cài đặt</button>
+          </div>
+          <button type="button" class="btn btn-ghost btn-small" data-action="howToPlay">Cách chơi</button>
+        </div>
+      </section>
+
+      <!-- HOW TO PLAY -->
+      <section id="screen-HOW_TO_PLAY" class="screen screen-overlay" hidden>
+        <div class="panel">
+          <div class="panel-header">
+            <button type="button" class="btn btn-icon" data-action="backHome" aria-label="Quay lại trang chủ">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <h2 class="panel-heading" tabindex="-1">Cách chơi</h2>
+          </div>
+          <ul class="howto-list">
+            <li>Nhân vật tự động chạy về phía trước, tốc độ tăng dần.</li>
+            <li>Nhấn <kbd>Space</kbd>, <kbd>↑</kbd>, <kbd>W</kbd> hoặc chạm vào màn chơi để <strong>nhảy</strong>.</li>
+            <li>Nhấn lần nữa khi đang ở trên không để <strong>nhảy kép</strong>. Tối đa 2 lần nhảy.</li>
+            <li>Thu thập coin để cộng điểm và mở khóa nhân vật mới.</li>
+            <li>Tránh thùng gỗ, cột cao và drone bay. Bạn có 3 máu mỗi lượt.</li>
+            <li>Nhấn <kbd>Esc</kbd> hoặc nút tạm dừng để nghỉ giữa chừng.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- CHARACTER SELECT -->
+      <section id="screen-CHARACTER_SELECT" class="screen screen-overlay" hidden>
+        <div class="panel panel-wide">
+          <div class="panel-header">
+            <button type="button" class="btn btn-icon" data-action="backHome" aria-label="Quay lại trang chủ">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <h2 class="panel-heading" tabindex="-1">Nhân vật</h2>
+            <div class="hud-chip">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="#FFC93C" stroke="#B57E14" stroke-width="2"/><circle cx="12" cy="12" r="5.4" fill="none" stroke="#D99A1F" stroke-width="1.8"/></svg>
+              <span class="hud-value" id="charTotalCoins">0</span>
+            </div>
+          </div>
+          <div id="characterCards" class="character-grid"></div>
+        </div>
+      </section>
+
+      <!-- MISSIONS -->
+      <section id="screen-MISSIONS" class="screen screen-overlay" hidden>
+        <div class="panel">
+          <div class="panel-header">
+            <button type="button" class="btn btn-icon" data-action="backHome" aria-label="Quay lại trang chủ">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <h2 class="panel-heading" tabindex="-1">Nhiệm vụ</h2>
+          </div>
+          <div id="missionList" class="mission-list"></div>
+        </div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section id="screen-SETTINGS" class="screen screen-overlay" hidden>
+        <div class="panel">
+          <div class="panel-header">
+            <button type="button" class="btn btn-icon" data-action="backHome" aria-label="Quay lại trang chủ">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <h2 class="panel-heading" tabindex="-1">Cài đặt</h2>
+          </div>
+          <div class="settings-group">
+            <div class="setting-row">
+              <span class="setting-label" id="labelSound">Âm thanh hiệu ứng</span>
+              <button type="button" class="switch" id="toggleSound" role="switch" aria-checked="true" aria-labelledby="labelSound"><span class="switch-thumb"></span></button>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label" id="labelMusic">Nhạc nền</span>
+              <button type="button" class="switch" id="toggleMusic" role="switch" aria-checked="true" aria-labelledby="labelMusic"><span class="switch-thumb"></span></button>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label" id="labelShake">Rung màn hình khi va chạm</span>
+              <button type="button" class="switch" id="toggleShake" role="switch" aria-checked="true" aria-labelledby="labelShake"><span class="switch-thumb"></span></button>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label" id="labelReducedMotion">Giảm chuyển động<span class="setting-hint">Tự bật nếu hệ điều hành yêu cầu</span></span>
+              <button type="button" class="switch" id="toggleReducedMotion" role="switch" aria-checked="false" aria-labelledby="labelReducedMotion"><span class="switch-thumb"></span></button>
+            </div>
+            <div class="setting-row setting-row-danger">
+              <span class="setting-label">Đặt lại dữ liệu<span class="setting-hint">Xóa điểm cao, coin, nhân vật và nhiệm vụ</span></span>
+              <button type="button" class="btn btn-danger btn-small" id="btnResetData" data-action="resetData">Đặt lại dữ liệu</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAUSED (z 40, trên HUD) -->
+      <section id="screen-PAUSED" class="screen screen-overlay" hidden>
+        <div class="panel panel-narrow">
+          <div class="panel-title-row">
+            <h2 class="panel-heading" tabindex="-1">Tạm dừng</h2>
+            <button type="button" class="btn btn-icon" id="btnPauseSound" data-action="toggleSoundQuick" aria-label="Tắt âm thanh"></button>
+          </div>
+          <p class="panel-subtitle">Nghỉ chút rồi chạy tiếp nhé.</p>
+          <div class="panel-actions">
+            <button type="button" class="btn btn-primary" data-action="resume" data-autofocus>Tiếp tục</button>
+            <button type="button" class="btn btn-secondary" data-action="restart">Chơi lại</button>
+            <button type="button" class="btn btn-ghost" data-action="returnHome">Về trang chủ</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- GAME OVER -->
+      <section id="screen-GAME_OVER" class="screen screen-overlay" hidden>
+        <div class="panel">
+          <h2 class="panel-heading" tabindex="-1">Kết thúc lượt chạy</h2>
+          <p id="newRecordBadge" class="record-badge" hidden>Kỷ lục mới!</p>
+          <div class="result-grid">
+            <div class="result-cell"><span class="result-label">Điểm</span><span class="result-value" id="overScore">0</span></div>
+            <div class="result-cell"><span class="result-label">Điểm cao</span><span class="result-value" id="overHighScore">0</span></div>
+            <div class="result-cell"><span class="result-label">Coin</span><span class="result-value" id="overCoins">0</span></div>
+            <div class="result-cell"><span class="result-label">Thời gian</span><span class="result-value" id="overTime">0s</span></div>
+          </div>
+          <p id="overRecordHint" class="record-hint" hidden></p>
+          <div id="overMissionsProgress" class="over-missions"></div>
+          <div id="overMissions" class="over-missions-done"></div>
+          <div class="panel-actions">
+            <button type="button" class="btn btn-primary" data-action="restart" data-autofocus>Chơi lại</button>
+            <button type="button" class="btn btn-secondary" data-action="returnHome">Về trang chủ</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- CANVAS ERROR -->
+      <section id="screen-CANVAS_ERROR" class="screen screen-overlay" hidden>
+        <div class="panel panel-narrow">
+          <h2 class="panel-heading" tabindex="-1">Không thể khởi động game</h2>
+          <p class="panel-subtitle">Trình duyệt của bạn không hỗ trợ Canvas 2D. Hãy thử Chrome, Safari, Edge hoặc Firefox phiên bản mới.</p>
+        </div>
+      </section>
+
+      <!-- Toast + banner (z 30) -->
+      <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+      <div id="difficultyBanner" class="difficulty-banner" hidden></div>
+
+      <!-- Reset modal (z 50) -->
+      <div id="modalReset" class="modal" hidden>
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalResetTitle" aria-describedby="modalResetDesc">
+          <h2 class="modal-title" id="modalResetTitle">Xóa toàn bộ dữ liệu?</h2>
+          <p class="modal-desc" id="modalResetDesc">Toàn bộ điểm cao, coin, nhân vật đã mở khóa và tiến độ nhiệm vụ sẽ bị xóa vĩnh viễn. Hành động này không thể hoàn tác.</p>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" data-action="cancelReset" data-autofocus>Hủy</button>
+            <button type="button" class="btn btn-danger" data-action="confirmReset">Xóa dữ liệu</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

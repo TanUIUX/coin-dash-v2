@@ -1,0 +1,57 @@
+/* Coin Dash — reset.css */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body,
+h1,
+h2,
+h3,
+p,
+ul,
+ol,
+figure {
+  margin: 0;
+}
+
+ul,
+ol {
+  padding: 0;
+  list-style: none;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+img,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+kbd {
+  font-family: Menlo, Consolas, monospace;
+  font-size: 0.85em;
+  background: #F0EFED;
+  border: 1px solid #D6D3CE;
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  padding: 1px 7px;
+}

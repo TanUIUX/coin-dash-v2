@@ -1,0 +1,89 @@
+/* Coin Dash — responsive.css
+   Mobile portrait: stage cao 62svh + Home/overlay full viewport.
+   Mobile landscape: stage gần full màn hình, panel cuộn được. */
+
+/* ===== Mobile portrait (≤ 720px) ===== */
+@media (max-width: 720px) and (orientation: portrait) {
+  .game-shell {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  /* Gameplay stage: khoảng 62svh ở đáy màn hình, không bó 16:9. */
+  .game-stage {
+    width: 100%;
+    aspect-ratio: auto;
+    height: 62svh;
+    max-height: none;
+    border-radius: 0;
+  }
+
+  /* Mọi screen + modal trở thành full viewport (không kẹt trong stage thấp). */
+  .screen,
+  .modal {
+    position: fixed;
+    inset: 0;
+  }
+
+  /* Home mobile: full viewport riêng, có hero canvas, hỗ trợ safe area, cuộn được. */
+  .screen-home {
+    background: linear-gradient(180deg, #BDE3FF 0%, #DFF4FF 62%, #CBEFD3 100%);
+    padding: calc(var(--space-4) + env(safe-area-inset-top, 0px))
+      calc(var(--space-4) + env(safe-area-inset-right, 0px))
+      calc(var(--space-4) + env(safe-area-inset-bottom, 0px))
+      calc(var(--space-4) + env(safe-area-inset-left, 0px));
+    overflow-y: auto;
+    pointer-events: auto;
+  }
+  .home-hero { display: flex; }
+  .home-title { font-size: var(--font-size-xl); }
+  .home-logo-coin { width: 30px; height: 30px; }
+  .home-stats { flex-direction: column; align-items: flex-end; gap: var(--space-1); }
+  .home-sheet { width: 100%; }
+
+  /* Panel overlay: chiếm gần toàn bộ chiều rộng, cuộn bên trong. */
+  .panel {
+    width: 100%;
+    max-height: calc(100svh - 32px);
+  }
+
+  /* Modal card mobile: width = calc(100% - 32px). */
+  .modal { padding: var(--space-4); }
+  .modal-card { width: calc(100% - 32px); max-width: 440px; margin: 0 auto; }
+  .modal-actions .btn { flex: 1; }
+
+  .result-grid { grid-template-columns: repeat(2, 1fr); }
+  .character-grid { grid-template-columns: 1fr 1fr; }
+
+  .tutorial-callout { bottom: 24%; max-width: calc(100% - 24px); }
+  .tutorial-text { white-space: normal; font-size: var(--font-size-sm); }
+}
+
+/* ===== Màn hình rất hẹp (≤ 360px): tránh tràn ngang ở 320px ===== */
+@media (max-width: 360px) {
+  .home-secondary { grid-template-columns: 1fr; }
+  .character-grid { grid-template-columns: 1fr; }
+  .home-header { flex-direction: column; }
+  .home-stats { flex-direction: row; align-items: center; }
+}
+
+/* ===== Mobile landscape (chiều cao ≤ 480px) ===== */
+@media (max-height: 480px) and (orientation: landscape) {
+  .game-shell { padding: var(--space-2); }
+  .game-stage {
+    width: auto;
+    height: calc(100svh - 12px);
+    max-height: none;
+    aspect-ratio: 16 / 9;
+    max-width: 100%;
+  }
+  .panel {
+    max-height: 92svh;
+    padding: var(--space-4);
+    gap: var(--space-3);
+  }
+  .panel-actions { flex-direction: row; flex-wrap: wrap; }
+  .panel-actions .btn { flex: 1; min-width: 140px; }
+  .home-sheet { width: min(100%, 520px); }
+  .home-secondary { grid-template-columns: repeat(3, 1fr); }
+}
